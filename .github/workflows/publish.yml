@@ -17,6 +17,27 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v6
 
+      # Five seconds of checking instead of four minutes of building, then "Could not read PGP
+      # secret key". This repository lost two publish runs and twelve days to a signing secret that
+      # was uploaded but was not a valid key ring, with nothing saying so until Gradle tried to sign.
+      - name: Check the signing key before spending a build on it
+        env:
+          KEY: ${{ secrets.SIGNING_KEY }}
+          CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+        run: |
+          fail() { echo "::error::$1"; echo "Fix: ./scripts/set-signing-secrets.sh ${{ github.repository }}"; exit 1; }
+          [ -n "$CENTRAL_USERNAME" ] || fail "CENTRAL_USERNAME is not set on this repository."
+          [ -n "$SIGNING_PASSWORD" ] || fail "SIGNING_PASSWORD is not set on this repository."
+          [ -n "$KEY" ] || fail "SIGNING_KEY is not set on this repository."
+          printf '%s' "$KEY" | head -1 | grep -q -- '-----BEGIN PGP PRIVATE KEY BLOCK-----' \
+            || fail "SIGNING_KEY does not start with the PGP private key header. It is not an armored secret key export."
+          printf '%s' "$KEY" | grep -q -- '-----END PGP PRIVATE KEY BLOCK-----' \
+            || fail "SIGNING_KEY has no END line, so it was truncated on upload. Upload it from a file, never by pasting."
+          bytes=$(printf '%s' "$KEY" | wc -c | tr -d ' ')
+          [ "$bytes" -ge 1000 ] || fail "SIGNING_KEY is only $bytes bytes - far too short for a private key."
+          echo "Signing key looks complete: $bytes bytes."
+
       - name: Publish
         run: ./gradlew publishAndReleaseToMavenCentral --no-configuration-cache --stacktrace
         env:
