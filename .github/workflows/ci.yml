@@ -25,6 +25,13 @@ jobs:
       - name: Test (JVM + Android host)
         run: ./gradlew :markdown:jvmTest :markdown:testAndroidHostTest --stacktrace
 
+      # The tests compile the Android target's Kotlin but never package it. `assemble` builds the
+      # release AAR and the JVM jar - the artefacts Maven Central actually receives - so a break in
+      # packaging is found here rather than part-way through a publish. The iOS job does the same
+      # for the three Apple targets; between them, everything that gets published gets built.
+      - name: Assemble the published artefacts
+        run: ./gradlew :markdown:assemble --stacktrace
+
   ios:
     # This library publishes three iOS targets to Maven Central - iosArm64, iosSimulatorArm64 and
     # iosX64 - and a macOS runner is the only place any of them can be built. So this job is the
