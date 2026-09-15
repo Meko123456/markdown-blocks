@@ -26,9 +26,10 @@ jobs:
         run: ./gradlew :markdown:jvmTest :markdown:testAndroidHostTest --stacktrace
 
   ios:
-    # This library publishes iOS artifacts to Maven Central, and until now nothing ever built them.
-    # A macOS runner is the only place that can, so it is the only place the iOS half of a release
-    # can be checked before it ships.
+    # This library publishes three iOS targets to Maven Central - iosArm64, iosSimulatorArm64 and
+    # iosX64 - and a macOS runner is the only place any of them can be built. So this job is the
+    # only place the iOS half of a release can be checked before it ships, and it has to cover all
+    # three: for a while it built one, which left two published targets never compiled at all.
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v7
@@ -40,8 +41,24 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v6
 
-      # Runs the shared tests on a simulator rather than only compiling them. Compiling proves the
-      # code is valid Kotlin/Native; running proves the parser behaves the same on Native as it
-      # does on the JVM, which is the actual promise a multiplatform library makes.
+      # iosSimulatorArm64 is the one published iOS target a runner can actually execute, so it is
+      # the one that runs the suite rather than only compiling it. Compiling proves the code is
+      # valid Kotlin/Native; running proves the parser behaves the same on Native as it does on the
+      # JVM, which is the actual promise a multiplatform library makes.
       - name: Test (iOS simulator)
         run: ./gradlew :markdown:iosSimulatorArm64Test --stacktrace
+
+      # The other two published targets have nothing here to run on. iosArm64 is a device target,
+      # and the runner is Apple Silicon, so an iosX64 test binary has no x86_64 simulator to boot -
+      # `iosX64Test` reports SKIPPED on such a host, which would read as coverage while checking
+      # nothing. Linking the test binary is the strongest check that does run: it compiles the
+      # library and the whole suite for that architecture and links them, so a break lands here
+      # instead of in a release. The release frameworks are linked for the same reason - that is
+      # what an iOS app consuming this library links against.
+      - name: Build the published iOS targets that cannot run here
+        run: |
+          ./gradlew :markdown:linkDebugTestIosArm64 \
+                    :markdown:linkDebugTestIosX64 \
+                    :markdown:linkReleaseFrameworkIosArm64 \
+                    :markdown:linkReleaseFrameworkIosSimulatorArm64 \
+                    :markdown:linkReleaseFrameworkIosX64 --stacktrace
