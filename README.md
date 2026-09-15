@@ -33,6 +33,12 @@ dependencies {
 }
 ```
 
+> **Not on Maven Central yet.** That is the coordinate this library will ship under, but the release
+> pipeline has never completed a run — `0.1.0` is still blocked on the Maven Central signing key — so
+> it does not resolve today. Until it does, build from source: clone the repo and either add
+> `includeBuild("../markdown-blocks")` to your `settings.gradle.kts`, or run
+> `./gradlew publishToMavenLocal` and add `mavenLocal()` to your repositories.
+
 ## What it parses
 
 **Blocks:** headings (`#`–`######`), paragraphs, bullet lists (`-` `*` `+`), ordered lists
