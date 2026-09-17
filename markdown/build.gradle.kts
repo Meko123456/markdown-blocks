@@ -7,6 +7,18 @@ plugins {
 kotlin {
     androidLibrary {
         namespace = "io.github.meko123456.markdown"
+        // Deliberately 36 while every app in this fleet is on 37, and not an oversight.
+        //
+        // AGP writes a library's compileSdk straight into the published AAR as minCompileSdk, so
+        // this value is a requirement placed on everyone who depends on the library rather than a
+        // private build detail. Verified on heatmap-compose rather than assumed: building that
+        // module on 37 produced minCompileSdk=37 in its aar-metadata.properties. It is the exact
+        // mechanism by which Compose BOM 2026.09.00 and okhttp 5.5.0 broke projects across this
+        // fleet all week.
+        //
+        // Nothing in this parser touches the Android platform at all, and a consumer should not have to
+        // move to a newer compile target to adopt a dependency-free markdown library.
+        // It moves when something here actually needs an API newer than 36, and not before.
         compileSdk = 36
         minSdk = 26
         withHostTestBuilder {}
