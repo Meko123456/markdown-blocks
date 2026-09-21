@@ -5,7 +5,7 @@ plugins {
 }
 
 kotlin {
-    androidLibrary {
+    android {
         namespace = "io.github.meko123456.markdown"
         // Deliberately 36 while every app in this fleet is on 37, and not an oversight.
         //
