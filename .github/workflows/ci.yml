@@ -9,9 +9,13 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Every job has a timeout of about three times its slowest green run (measured October 2026).
+# GitHub's default is six hours, and a job that hangs (a simulator or emulator that never comes
+# up, say) would otherwise hold the run, and keep its log unreadable, for all of them.
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
 
@@ -38,6 +42,7 @@ jobs:
     # only place the iOS half of a release can be checked before it ships, and it has to cover all
     # three: for a while it built one, which left two published targets never compiled at all.
     runs-on: macos-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
 
