@@ -21,8 +21,19 @@ public object Markdown {
         val blocks = mutableListOf<MdBlock>()
         val lines = text.replace("\r\n", "\n").split("\n")
         val paragraph = mutableListOf<String>()
+        val quote = mutableListOf<String>()
+
+        // Consecutive "> " lines are one quote, joined like a paragraph's lines; each used to be a
+        // quote of its own, so a quotation broken over lines rendered as a stack of boxes.
+        fun flushQuote() {
+            if (quote.isNotEmpty()) {
+                blocks += MdBlock.Quote(parseInline(quote.joinToString(" ")))
+                quote.clear()
+            }
+        }
 
         fun flushParagraph() {
+            flushQuote()
             if (paragraph.isNotEmpty()) {
                 blocks += MdBlock.Paragraph(parseInline(paragraph.joinToString(" ")))
                 paragraph.clear()
@@ -68,8 +79,11 @@ public object Markdown {
                             blocks += heading
                         }
                         trimmed.startsWith("> ") || trimmed == ">" -> {
-                            flushParagraph()
-                            blocks += MdBlock.Quote(parseInline(trimmed.removePrefix(">").trim()))
+                            val text = trimmed.removePrefix(">").trim()
+                            if (paragraph.isNotEmpty()) flushParagraph()
+                            // A bare ">" separates paragraphs within a quote. It used to come out
+                            // as a quote with nothing in it, an empty box between the two.
+                            if (text.isEmpty()) flushQuote() else quote += text
                         }
                         bullet != null -> {
                             flushParagraph()
@@ -79,7 +93,10 @@ public object Markdown {
                             flushParagraph()
                             blocks += ordered
                         }
-                        else -> paragraph += trimmed
+                        else -> {
+                            flushQuote()
+                            paragraph += trimmed
+                        }
                     }
                     i++
                 }

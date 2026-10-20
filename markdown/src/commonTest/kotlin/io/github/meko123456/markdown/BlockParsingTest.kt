@@ -47,6 +47,39 @@ class BlockParsingTest {
     }
 
     @Test
+    fun consecutiveQuoteLinesAreOneQuote() {
+        val quote = Markdown.parse("> The best time to plant a tree\n> was twenty years ago.").single()
+        assertEquals(
+            listOf(MdSpan.Text("The best time to plant a tree was twenty years ago.")),
+            (quote as MdBlock.Quote).spans,
+        )
+    }
+
+    @Test
+    fun aBareQuoteMarkerSeparatesQuotesInsteadOfMakingAnEmptyOne() {
+        val blocks = Markdown.parse("> first\n>\n> second")
+        assertEquals(
+            listOf(MdBlock.Quote(listOf(MdSpan.Text("first"))), MdBlock.Quote(listOf(MdSpan.Text("second")))),
+            blocks,
+        )
+        assertEquals(emptyList(), Markdown.parse(">"))
+    }
+
+    @Test
+    fun aQuoteEndsWhereOtherTextOrABlankLineBegins() {
+        val blocks = Markdown.parse("before\n> quoted\nafter\n\n> again")
+        assertEquals(
+            listOf(
+                MdBlock.Paragraph(listOf(MdSpan.Text("before"))),
+                MdBlock.Quote(listOf(MdSpan.Text("quoted"))),
+                MdBlock.Paragraph(listOf(MdSpan.Text("after"))),
+                MdBlock.Quote(listOf(MdSpan.Text("again"))),
+            ),
+            blocks,
+        )
+    }
+
+    @Test
     fun parsesFencedCodeWithLanguage() {
         val code = Markdown.parse("```kotlin\nval x = 1\n```").single() as MdBlock.CodeBlock
         assertEquals("kotlin", code.language)
