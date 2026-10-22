@@ -44,7 +44,8 @@ dependencies {
 
 **Blocks:** headings (`#`–`######`), paragraphs, bullet lists (`-` `*` `+`), ordered lists
 (`1.` `1)`), block quotes (`>`), fenced code (```` ``` ```` with an optional language), and
-horizontal rules (`---` `***` `___`).
+horizontal rules (`---` `***` `___`). As in CommonMark, a quote's lines after the first may
+leave out the `>`, and a bare `>` line starts a new paragraph.
 
 **Inline:** `**bold**`, `__bold__`, `*italic*`, `_italic_`, `` `code` ``, `~~strikethrough~~`,
 and `[links](https://example.com)`.

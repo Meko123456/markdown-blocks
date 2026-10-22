@@ -93,10 +93,10 @@ public object Markdown {
                             flushParagraph()
                             blocks += ordered
                         }
-                        else -> {
-                            flushQuote()
-                            paragraph += trimmed
-                        }
+                        // CommonMark's laziness: a plain line straight after a quote's lines carries on
+                        // its paragraph, ">" or not. It used to start a paragraph of its own, so a
+                        // quotation whose later lines had no ">" split into a quote and a paragraph.
+                        else -> if (quote.isNotEmpty()) quote += trimmed else paragraph += trimmed
                     }
                     i++
                 }

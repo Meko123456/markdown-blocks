@@ -66,8 +66,8 @@ class BlockParsingTest {
     }
 
     @Test
-    fun aQuoteEndsWhereOtherTextOrABlankLineBegins() {
-        val blocks = Markdown.parse("before\n> quoted\nafter\n\n> again")
+    fun aQuoteEndsAtABlankLine() {
+        val blocks = Markdown.parse("before\n> quoted\n\nafter\n\n> again")
         assertEquals(
             listOf(
                 MdBlock.Paragraph(listOf(MdSpan.Text("before"))),
@@ -77,6 +77,34 @@ class BlockParsingTest {
             ),
             blocks,
         )
+    }
+
+    /** CommonMark's laziness: the lines after a quote's first may leave out the ">". */
+    @Test
+    fun aPlainLineStraightAfterAQuoteContinuesIt() {
+        assertEquals(
+            listOf(MdBlock.Quote(listOf(MdSpan.Text("The best time to plant a tree was twenty years ago.")))),
+            Markdown.parse("> The best time to plant a tree\nwas twenty years ago."),
+        )
+        // Marked and unmarked lines can alternate, and it is still one quote.
+        assertEquals(
+            listOf(MdBlock.Quote(listOf(MdSpan.Text("one two three")))),
+            Markdown.parse("> one\ntwo\n> three"),
+        )
+    }
+
+    /**
+     * Only paragraph text is lazy. A list item, a heading or a rule after a quote is a block of its
+     * own, as in CommonMark, and so is a line after a bare ">", which has already ended the quote's
+     * paragraph.
+     */
+    @Test
+    fun onlyParagraphTextContinuesAQuote() {
+        val quoted = MdBlock.Quote(listOf(MdSpan.Text("quoted")))
+        assertEquals(listOf(quoted, MdBlock.BulletItem(listOf(MdSpan.Text("item")))), Markdown.parse("> quoted\n- item"))
+        assertEquals(listOf(quoted, MdBlock.Heading(2, listOf(MdSpan.Text("Next")))), Markdown.parse("> quoted\n## Next"))
+        assertEquals(listOf(quoted, MdBlock.Divider), Markdown.parse("> quoted\n---"))
+        assertEquals(listOf(quoted, MdBlock.Paragraph(listOf(MdSpan.Text("after")))), Markdown.parse("> quoted\n>\nafter"))
     }
 
     @Test
